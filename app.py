@@ -359,8 +359,6 @@ with tab2:
             st.rerun()
 
 # ══════════════════════════════════════════════════════════════
-#  TAB 3 — NLP CHATBOT
-# ══════════════════════════════════════════════════════════════
 # ══════════════════════════════════════════════════════════════
 #  TAB 3 — NLP CHATBOT (GEMINI)
 # ══════════════════════════════════════════════════════════════
@@ -378,7 +376,6 @@ with tab3:
             icon="🔑",
         )
     else:
-        # Display chat history
         for msg in st.session_state.chat_history:
             with st.chat_message(msg["role"]):
                 st.write(msg["content"])
@@ -404,10 +401,10 @@ with tab3:
                             "Question: "
                         )
                         response = gemini_client.models.generate_content(
-    model="gemini-2.0-flash",
-    contents=prompt_context + user_question,
-)
-answer = response.text
+                            model="gemini-2.0-flash",
+                            contents=prompt_context + user_question,
+                        )
+                        answer = response.text
                         st.write(answer)
                         st.session_state.chat_history.append(
                             {"role": "assistant", "content": answer}
