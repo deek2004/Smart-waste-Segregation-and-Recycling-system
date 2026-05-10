@@ -401,7 +401,7 @@ with tab3:
                             "Question: "
                         )
                         response = gemini_client.models.generate_content(
-                            model="gemini-2.0-flash",
+                            model="gemini-1.5-flash",
                             contents=prompt_context + user_question,
                         )
                         answer = response.text
@@ -410,7 +410,13 @@ with tab3:
                             {"role": "assistant", "content": answer}
                         )
                     except Exception as e:
-                        st.error(f"Gemini error: {e}")
+                        if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
+                            st.error(
+                                "⏳ The AI assistant is temporarily unavailable "
+                                "due to rate limits. Please try again in a minute."
+                            )
+                        else:
+                            st.error(f"Gemini error: {e}")
 
         if st.session_state.chat_history:
             if st.button("🗑️ Clear Chat"):
