@@ -9,12 +9,12 @@ import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
 import requests
-import google.generativeai as genai
+# NEW — replace with this
+from google import genai
+
 GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY", "")
 if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
-    model_gemini = genai.GenerativeModel("gemini-1.5-flash")
-
+    gemini_client = genai.Client(api_key=GEMINI_API_KEY)
 # ── Page Config ──────────────────────────────────────────────
 st.set_page_config(
     page_title="Smart Waste Segregation",
@@ -403,10 +403,11 @@ with tab3:
                             "or environmental sustainability. "
                             "Question: "
                         )
-                        response = model_gemini.generate_content(
-                            prompt_context + user_question
-                        )
-                        answer = response.text
+                        response = gemini_client.models.generate_content(
+    model="gemini-2.0-flash",
+    contents=prompt_context + user_question,
+)
+answer = response.text
                         st.write(answer)
                         st.session_state.chat_history.append(
                             {"role": "assistant", "content": answer}
