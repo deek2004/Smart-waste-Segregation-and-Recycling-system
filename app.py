@@ -154,25 +154,32 @@ with tab1:
             st.error(f"Could not load model: {e}")
             st.stop()
 
-    st.subheader("📸 Upload Waste Image")
+st.subheader("📸 Upload Waste Image")
+
+col_upload, col_camera = st.columns(2)
+
+with col_upload:
     uploaded = st.file_uploader(
-        "Choose an image file",
+        "📁 Upload an image",
         type=["jpg", "jpeg", "png", "webp"],
     )
 
-    if uploaded:
-        image = Image.open(uploaded)
-        col1, col2 = st.columns([1, 1], gap="large")
+with col_camera:
+    camera_photo = st.camera_input("📷 Or take a photo")
 
-        with col1:
-            st.image(image, caption="Uploaded image", width=300)
+if camera_photo is not None:
+    uploaded = camera_photo
 
-        with col2:
-            with st.spinner("Analysing waste..."):
-                label, probs = predict(image, model)
-                st.session_state.scan_log.append(label)
-                info = WASTE_INFO[label]
-
+if uploaded:
+    image = Image.open(uploaded)
+    col1, col2 = st.columns([1, 1], gap="large")
+    with col1:
+        st.image(image, caption="Uploaded image", width=300)
+    with col2:
+        with st.spinner("Analysing waste..."):
+            label, probs = predict(image, model)
+            st.session_state.scan_log.append(label)
+            info = WASTE_INFO[label]
             st.markdown(f"""
             <div style="background:{info['bg']};border-radius:12px;
                         padding:16px 20px;margin-bottom:16px;
