@@ -4,5 +4,3 @@ pillow
 numpy
 matplotlib
 scikit-learn
-requests
-google-genai

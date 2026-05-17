@@ -9,12 +9,6 @@ import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
 import requests
-# NEW — replace with this
-from google import genai
-
-GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY", "")
-if GEMINI_API_KEY:
-    gemini_client = genai.Client(api_key=GEMINI_API_KEY)
 # ── Page Config ──────────────────────────────────────────────
 st.set_page_config(
     page_title="Smart Waste Segregation",
@@ -146,7 +140,7 @@ st.markdown(
 )
 st.divider()
 
-tab1, tab2, tab3 = st.tabs(["🔍 Classify", "📊 Analytics", "🤖 Chatbot"])
+tab1, tab2 = st.tabs(["🔍 Classify", "📊 Analytics"])
 
 # ══════════════════════════════════════════════════════════════
 #  TAB 1 — CLASSIFIER
@@ -358,70 +352,7 @@ with tab2:
             st.session_state.scan_log = []
             st.rerun()
 
-# ══════════════════════════════════════════════════════════════
-# ══════════════════════════════════════════════════════════════
-#  TAB 3 — NLP CHATBOT (GEMINI)
-# ══════════════════════════════════════════════════════════════
-with tab3:
-    st.subheader("🤖 AI Recycling Assistant")
-    st.markdown(
-        "Ask me anything about waste disposal, recycling rules, "
-        "or sustainability. Powered by **Google Gemini**."
-    )
 
-    if not GEMINI_API_KEY:
-        st.warning(
-            "⚠️ Gemini API key not configured. "
-            "Add `GEMINI_API_KEY` to Streamlit secrets to enable this feature.",
-            icon="🔑",
-        )
-    else:
-        for msg in st.session_state.chat_history:
-            with st.chat_message(msg["role"]):
-                st.write(msg["content"])
-
-        user_question = st.chat_input("e.g. Can I recycle a greasy pizza box?")
-
-        if user_question:
-            st.session_state.chat_history.append(
-                {"role": "user", "content": user_question}
-            )
-            with st.chat_message("user"):
-                st.write(user_question)
-
-            with st.chat_message("assistant"):
-                with st.spinner("Gemini is thinking..."):
-                    try:
-                        prompt_context = (
-                            "You are an expert waste management and recycling assistant. "
-                            "Answer the following question clearly and concisely in under 100 words. "
-                            "Use bullet points for clarity when listing steps or options. "
-                            "Only answer questions related to waste, recycling, composting, "
-                            "or environmental sustainability. "
-                            "Question: "
-                        )
-                        response = gemini_client.models.generate_content(
-                            model="gemini-2.0-flash-lite",
-                            contents=prompt_context + user_question,
-                        )
-                        answer = response.text
-                        st.write(answer)
-                        st.session_state.chat_history.append(
-                            {"role": "assistant", "content": answer}
-                        )
-                    except Exception as e:
-                        if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
-                            st.error(
-                                "⏳ The AI assistant is temporarily unavailable "
-                                "due to rate limits. Please try again in a minute."
-                            )
-                        else:
-                            st.error(f"Gemini error: {e}")
-
-        if st.session_state.chat_history:
-            if st.button("🗑️ Clear Chat"):
-                st.session_state.chat_history = []
-                st.rerun()
 # ── Footer ────────────────────────────────────────────────────
 st.divider()
 st.markdown(
