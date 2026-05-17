@@ -1,6 +1,6 @@
 # ============================================================
 #  Smart Waste Segregation & Recycling System
-#  Full Version: Classifier + NLP Chatbot + Analytics + Impact
+#  Classifier + Analytics + Camera Input + Impact Calculator
 # ============================================================
 
 import streamlit as st
@@ -8,7 +8,8 @@ import tensorflow as tf
 import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
-import requests
+from collections import Counter
+
 # ── Page Config ──────────────────────────────────────────────
 st.set_page_config(
     page_title="Smart Waste Segregation",
@@ -99,8 +100,6 @@ IMPACT = {
 # ── Session State ─────────────────────────────────────────────
 if "scan_log" not in st.session_state:
     st.session_state.scan_log = []
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
 
 # ── Load Model ────────────────────────────────────────────────
 @st.cache_resource
@@ -131,12 +130,12 @@ def score_bar(score, color):
     """, unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════════
-#  TABS
+#  HEADER
 # ══════════════════════════════════════════════════════════════
 st.title("♻️ Smart Waste Segregation")
 st.markdown(
     "AI-powered waste classification with recyclability scoring, "
-    "disposal guides, NLP chatbot, and real-time analytics."
+    "disposal guides, and real-time analytics."
 )
 st.divider()
 
@@ -146,6 +145,8 @@ tab1, tab2 = st.tabs(["🔍 Classify", "📊 Analytics"])
 #  TAB 1 — CLASSIFIER
 # ══════════════════════════════════════════════════════════════
 with tab1:
+
+    # Load model
     with st.spinner("Loading AI model..."):
         try:
             model = load_model()
@@ -154,32 +155,38 @@ with tab1:
             st.error(f"Could not load model: {e}")
             st.stop()
 
-st.subheader("📸 Upload Waste Image")
+    st.subheader("📸 Upload Waste Image")
 
-col_upload, col_camera = st.columns(2)
+    # ── Upload + Camera side by side ─────────────────────────
+    col_upload, col_camera = st.columns(2)
 
-with col_upload:
-    uploaded = st.file_uploader(
-        "📁 Upload an image",
-        type=["jpg", "jpeg", "png", "webp"],
-    )
+    with col_upload:
+        uploaded = st.file_uploader(
+            "📁 Upload an image",
+            type=["jpg", "jpeg", "png", "webp"],
+        )
 
-with col_camera:
-    camera_photo = st.camera_input("📷 Or take a photo")
+    with col_camera:
+        camera_photo = st.camera_input("📷 Or take a photo")
 
-if camera_photo is not None:
-    uploaded = camera_photo
+    # Camera overrides uploader if both are used
+    if camera_photo is not None:
+        uploaded = camera_photo
 
-if uploaded:
-    image = Image.open(uploaded)
-    col1, col2 = st.columns([1, 1], gap="large")
-    with col1:
-        st.image(image, caption="Uploaded image", width=300)
-    with col2:
-        with st.spinner("Analysing waste..."):
-            label, probs = predict(image, model)
-            st.session_state.scan_log.append(label)
-            info = WASTE_INFO[label]
+    # ── Classification ────────────────────────────────────────
+    if uploaded:
+        image = Image.open(uploaded)
+        col1, col2 = st.columns([1, 1], gap="large")
+
+        with col1:
+            st.image(image, caption="Uploaded image", width=300)
+
+        with col2:
+            with st.spinner("Analysing waste..."):
+                label, probs = predict(image, model)
+                st.session_state.scan_log.append(label)
+                info = WASTE_INFO[label]
+
             st.markdown(f"""
             <div style="background:{info['bg']};border-radius:12px;
                         padding:16px 20px;margin-bottom:16px;
@@ -273,7 +280,7 @@ if uploaded:
           <div style="font-size:18px;font-weight:600;
                       margin:12px 0 8px;">No image uploaded yet</div>
           <div style="color:#666;font-size:14px;">
-              Upload a JPG or PNG of any waste item to get started
+              Upload a file or take a photo to get started
           </div>
         </div>
         """, unsafe_allow_html=True)
@@ -289,7 +296,6 @@ with tab2:
     else:
         log = st.session_state.scan_log
         total = len(log)
-
         avg_score = sum(WASTE_INFO[l]["score"] for l in log) // total
         most_common = max(set(log), key=log.count)
 
@@ -300,11 +306,10 @@ with tab2:
 
         st.divider()
 
-        from collections import Counter
-        counts = Counter(log)
-        categories  = [WASTE_INFO[c]["label"] for c in CLASS_NAMES if c in counts]
-        values      = [counts[c] for c in CLASS_NAMES if c in counts]
-        colors      = [WASTE_INFO[c]["color"] for c in CLASS_NAMES if c in counts]
+        counts     = Counter(log)
+        categories = [WASTE_INFO[c]["label"] for c in CLASS_NAMES if c in counts]
+        values     = [counts[c] for c in CLASS_NAMES if c in counts]
+        colors     = [WASTE_INFO[c]["color"] for c in CLASS_NAMES if c in counts]
 
         col1, col2 = st.columns(2)
 
@@ -358,7 +363,6 @@ with tab2:
         if st.button("🔄 Clear Session Data"):
             st.session_state.scan_log = []
             st.rerun()
-
 
 # ── Footer ────────────────────────────────────────────────────
 st.divider()
